@@ -4,9 +4,14 @@ namespace Trade.Notification
 {
     public abstract class BaseService
     {
-        private readonly INotifier _notifier;
+        private INotifier _notifier;
 
-        protected BaseService(INotifier notifier)
+        protected BaseService()
+        {
+            
+        }
+
+        protected void Initialize(INotifier notifier)
         {
             _notifier = notifier;
         }

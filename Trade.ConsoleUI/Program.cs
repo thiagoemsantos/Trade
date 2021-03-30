@@ -1,31 +1,40 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Configuration;
+using System.Linq;
 using Trade.Core;
 using Trade.Core.Configuration;
 using Trade.Core.EventArgs;
 using Trade.IoC;
+using Trade.Notification.Interfaces;
 
 namespace Trade.ConsoleUI
 {
     class Program
     {
-        static void Main(string[] args)
+        static readonly INotifier _notifier;
+        static readonly ITradeFactory _factory;
+
+        static Program()
         {
             var serviceCollection = new ServiceCollection();
             NativeInjectorBootStrapper.ResolveDependencies(serviceCollection);
             var serviceProvider = serviceCollection.BuildServiceProvider();
-            var tradeFactory = serviceProvider.GetService<ITradeFactory>();
-            CategorizePortfolio(tradeFactory);
+            _factory = serviceProvider.GetService<ITradeFactory>();
+            _notifier = serviceProvider.GetService<INotifier>();
+        }
+        static void Main(string[] args)
+        {
+          
+            CategorizePortfolio();
             Console.ReadLine();
         }
 
-
-        private static void CategorizePortfolio(ITradeFactory tradeFactory)
+        
+        private static void CategorizePortfolio()
         {
             Output("--- Starting Process ---");
 
-            // get modules
             var config = ConfigurationManager.GetSection("tradeModules") as TradeModulesConfigurationSection;
 
             var moduleElementCollection = config.Modules;
@@ -34,7 +43,6 @@ namespace Trade.ConsoleUI
 
             foreach (ModuleElement moduleElement in moduleElementCollection)
             {
-                //string name = moduleElement.Name;
                 string moduleType = moduleElement.Type;
                 var type = Type.GetType(moduleType);
                 ITradeModule module = Activator.CreateInstance(type) as ITradeModule;
@@ -43,7 +51,7 @@ namespace Trade.ConsoleUI
                 Output("Loaded and initialized module '" + moduleType + "'.");
             }
 
-            var provider = tradeFactory.GetDataProvider();
+            var provider = _factory.GetDataProvider(_notifier);
 
             var source = provider.GetSource();
 
@@ -60,7 +68,6 @@ namespace Trade.ConsoleUI
                 moduleEvents.CheckDataSource.Invoke(eventArgs);
 
                 cancel = eventArgs.Cancel;
-
                 Output("Processed 'CheckDataSource' operations - Cancel is set to " + cancel.ToString() + ".");
             }
 
@@ -69,7 +76,13 @@ namespace Trade.ConsoleUI
             if (!cancel)
             {
                 var portfolio = provider.GetAndValidatePotfolio(source);
-
+                if (_notifier.HasNotification())
+                {
+                    var errors = _notifier.Get().Select(n => n.Message).ToArray();
+                    var errorsJoined = string.Join(Environment.NewLine, errors);
+                    Output(errorsJoined, true);
+                    return;
+                }
                 Output("Portfolio obtained.");
 
                 if (moduleEvents.PreProcessData != null)

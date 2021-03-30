@@ -7,7 +7,7 @@ using Trade.Core.Entity;
 using Trade.Core.Interfaces;
 using Trade.Core.Validators;
 using Trade.Notification;
-using Trade.Notification.Notifications;
+using Trade.Notification.Interfaces;
 using Trade.Notification.Phrases;
 
 namespace Trade.Core.Providers
@@ -15,10 +15,6 @@ namespace Trade.Core.Providers
     public class TextFileProvider : BaseService, IDataProvider
     {
         
-        public TextFileProvider() : base(new Notifier())
-        {
-        }
-
         string IDataProvider.GetSource()
         {
             string path = ConfigurationManager.AppSettings["filePath"];
@@ -144,6 +140,12 @@ namespace Trade.Core.Providers
                     writer.WriteLine();
                 }
             }
+        }
+
+       
+        void IDataProvider.Initialize(INotifier notifier)
+        {
+            base.Initialize(notifier);
         }
     }
 }

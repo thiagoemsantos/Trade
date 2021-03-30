@@ -1,4 +1,5 @@
 ﻿using Trade.Core.Interfaces;
+using Trade.Notification.Interfaces;
 
 namespace Trade.Core
 {
@@ -6,6 +7,7 @@ namespace Trade.Core
     {
         string GetSource();
         IPortfolio GetAndValidatePotfolio(string source);
+        void Initialize(INotifier notifier);
         void LogData(string data);
     }
 }

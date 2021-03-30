@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Configuration;
 using Trade.Core.Configuration;
+using Trade.Notification.Interfaces;
 
 namespace Trade.Core
 {
     public class TradeFactory : ITradeFactory
     {
-        public IDataProvider GetDataProvider()
+        public IDataProvider GetDataProvider(INotifier notifier)
         {
-            string provider = ConfigurationManager.AppSettings["dataProvider"];
+            var provider = ConfigurationManager.AppSettings["dataProvider"];
 
-            IDataProvider dataProvider = Activator.CreateInstance(GetType(provider)) as IDataProvider;
-
+            var dataProvider = Activator.CreateInstance(GetType(provider)) as IDataProvider;
+            dataProvider.Initialize(notifier);
             return dataProvider;
         }
 
